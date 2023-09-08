@@ -2,8 +2,12 @@
 name = "rust-spy"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "Apache-2.0"
+authors = ["NucliaDB <nucliadb@nuclia.com>"]
+description = "Stack dump CLI"
+repository = "https://github.com/nuclia/rust-spy"
+homepage = "https://nuclia.com/"
+documentation = "https://nuclia.com"
 
 [dependencies]
 addr2line = "0.21.0"
