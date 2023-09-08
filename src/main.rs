@@ -18,9 +18,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 use std::fs::File;
-use std::{env, fs, io, process};
-
-#[allow(clippy::all)]
+use std::{env, fs, process, io};
 use rstack;
 use rustc_demangle::demangle;
 use serde::{Deserialize, Serialize};
