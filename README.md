@@ -25,3 +25,7 @@ rust-spy [pid]
 ```
 
 If you get a permission denied error, run as root.
+
+# License
+
+Licensed under APLv2, ([LICENSE.txt](LICENSE.txt) or http://www.apache.org/licenses/LICENSE-2.0)
