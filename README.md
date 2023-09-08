@@ -6,10 +6,10 @@ If you want to spy on your Rust app, make sure you compile
 it with debug information enabled (even in release mode)
 so you get all symbols converted to files/lines/columns.
 
-Depends on the `libwd` system lib. Install it on Debuntu with:
+Depends on the `libdw` system lib. Install it on Debuntu with:
 
 ```
-apt-get install libwd-dev
+apt-get install libdw-dev
 ```
 
 Installation:
