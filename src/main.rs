@@ -18,9 +18,8 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 use std::fs::File;
-use std::{env, fs, process};
+use std::{env, fs, io, process};
 
-use async_std::io;
 #[allow(clippy::all)]
 use rstack;
 use rustc_demangle::demangle;
