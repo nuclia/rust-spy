@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 use std::fs::File;
-use std::{env, fs, io, process};
+use std::{fs, io, process};
 
 use clap::Parser;
 #[allow(clippy::all)]
@@ -60,21 +60,22 @@ fn get_binary_path(pid: u32) -> io::Result<String> {
 }
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author="Nuclia", version, about="Dumps your stacks")]
 pub struct Args {
     /// PID
     #[clap(short, long, default_value_t = 1)]
     pid: u32,
 
+    /// Filter by thread name
     #[clap(short, long, default_value_t = String::from(""))]
     thread_name: String,
 
     /// Output
-    #[clap(value_enum, default_value_t = Output::Plain)]
+    #[clap(short, long, value_enum, default_value_t = Output::Plain)]
     output: Output,
 }
 
-#[derive(clap::ValueEnum, Clone)]
+#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 enum Output {
     Plain,
     Json,
@@ -116,9 +117,16 @@ fn main() {
     let mut process_info = ProcessInfo { threads: vec![] };
 
     for thread in process.threads() {
+        let thread_name = thread.name().unwrap_or("<unknown>").to_string();
+
+        if args.thread_name != "" && thread_name != args.thread_name {
+                continue;
+        }
+
+
         let mut thread_info = ThreadInfo {
             thread_id: thread.id(),
-            thread_name: thread.name().unwrap_or("<unknown>").to_string(),
+            thread_name: thread_name,
             frames: vec![],
         };
 
@@ -168,15 +176,19 @@ fn main() {
         println!("{}", json_output);
     } else {
         for thread in process_info.threads.iter() {
+            if args.thread_name != "" && thread.thread_name != args.thread_name {
+                continue;
+            }
+
             println!("Thread [{}] {}", thread.thread_id, thread.thread_name);
             for (idx, frame) in thread.frames.iter().enumerate() {
-                if let Some(line_info) = frame.line_info {
+                if let Some(line_info) = &frame.line_info {
                     println!(
-                        "{}: {} ({})\n\tat {}:{}",
+                        "\t{}: {} ({})\n\tat {}:{}",
                         idx, frame.symbol_name, frame.symbol_offset, line_info.file, line_info.line
                     );
                 } else {
-                    println!("{}: {} ({})", idx, frame.symbol_name, frame.symbol_offset);
+                    println!("\t{}: {} ({})", idx, frame.symbol_name, frame.symbol_offset);
                 }
             }
         }

@@ -11,7 +11,7 @@ documentation = "https://nuclia.com"
 
 [dependencies]
 addr2line = "0.21.0"
-clap = "4.4.5"
+clap = { version = "4.4.5", features = ["derive"] }
 memmap2 = "0.7.1"
 rstack = { version = "0.3.3", features = ["dw"], default-features = false }
 rustc-demangle = "0.1.23"
