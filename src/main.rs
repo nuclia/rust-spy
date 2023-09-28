@@ -166,6 +166,7 @@ fn main() {
         process_info.threads.push(thread_info);
     }
 
+    // Prints out
     if args.output == Output::Json {
         // Serialize process_info to JSON using serde_json
         let json_output = serde_json::to_string_pretty(&process_info)
@@ -175,10 +176,6 @@ fn main() {
         println!("{}", json_output);
     } else {
         for thread in process_info.threads.iter() {
-            if !args.thread_name.is_empty() && thread.thread_name != args.thread_name {
-                continue;
-            }
-
             println!("Thread [{}] {}", thread.thread_id, thread.thread_name);
             for (idx, frame) in thread.frames.iter().enumerate() {
                 if let Some(line_info) = &frame.line_info {
