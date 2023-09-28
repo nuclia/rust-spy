@@ -24,7 +24,6 @@ use clap::Parser;
 use rstack;
 use rustc_demangle::demangle;
 use serde::{Deserialize, Serialize};
-use {addr2line, memmap2};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct LineInfo {
@@ -119,14 +118,14 @@ fn main() {
     for thread in process.threads() {
         let thread_name = thread.name().unwrap_or("<unknown>").to_string();
 
-        if args.thread_name != "" && thread_name != args.thread_name {
+        if !args.thread_name.is_empty() && thread_name != args.thread_name {
                 continue;
         }
 
 
         let mut thread_info = ThreadInfo {
             thread_id: thread.id(),
-            thread_name: thread_name,
+            thread_name,
             frames: vec![],
         };
 
@@ -176,7 +175,7 @@ fn main() {
         println!("{}", json_output);
     } else {
         for thread in process_info.threads.iter() {
-            if args.thread_name != "" && thread.thread_name != args.thread_name {
+            if !args.thread_name.is_empty() && thread.thread_name != args.thread_name {
                 continue;
             }
 
