@@ -16,9 +16,11 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 use std::fs::File;
-use std::{env, fs, process, io};
+use std::{env, fs, io, process};
+
+use clap::Parser;
+#[allow(clippy::all)]
 use rstack;
 use rustc_demangle::demangle;
 use serde::{Deserialize, Serialize};
@@ -57,29 +59,52 @@ fn get_binary_path(pid: u32) -> io::Result<String> {
     Ok(path.to_string_lossy().to_string())
 }
 
-fn main() {
-    let args = env::args().collect::<Vec<_>>();
-    if args.len() != 2 {
-        eprintln!("Usage: {} <pid>", args[0]);
-        process::exit(1);
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct Args {
+    /// PID
+    #[clap(short, long, default_value_t = 1)]
+    pid: u32,
+
+    #[clap(short, long, default_value_t = String::from(""))]
+    thread_name: String,
+
+    /// Output
+    #[clap(value_enum, default_value_t = Output::Plain)]
+    output: Output,
+}
+
+#[derive(clap::ValueEnum, Clone)]
+enum Output {
+    Plain,
+    Json,
+}
+
+impl Default for Args {
+    fn default() -> Self {
+        Args::new()
     }
+}
 
-    let pid = match args[1].parse() {
-        Ok(pid) => pid,
-        Err(e) => {
-            eprintln!("error parsing PID: {}", e);
-            process::exit(1);
-        }
-    };
+impl Args {
+    pub fn new() -> Args {
+        Args::parse()
+    }
+}
 
-    let binary_path = get_binary_path(pid).unwrap();
+fn main() {
+    let args = Args::new();
+
+    // Get the binary file
+    let binary_path = get_binary_path(args.pid).unwrap();
     let binary = File::open(binary_path).unwrap();
+
     let map = unsafe { memmap2::Mmap::map(&binary).unwrap() };
     let file = addr2line::object::File::parse(&*map).unwrap();
     let map = addr2line::ObjectContext::new(&file).expect("debug symbols not found");
 
     // Get trace
-    let process = match rstack::trace(pid) {
+    let process = match rstack::trace(args.pid) {
         Ok(threads) => threads,
         Err(e) => {
             eprintln!("error tracing threads: {}", e);
@@ -134,10 +159,26 @@ fn main() {
         process_info.threads.push(thread_info);
     }
 
-    // Serialize process_info to JSON using serde_json
-    let json_output = serde_json::to_string_pretty(&process_info)
-        .expect("Failed to serialize process_info to JSON");
+    if args.output == Output::Json {
+        // Serialize process_info to JSON using serde_json
+        let json_output = serde_json::to_string_pretty(&process_info)
+            .expect("Failed to serialize process_info to JSON");
 
-    // Print the JSON output
-    println!("{}", json_output);
+        // Print the JSON output
+        println!("{}", json_output);
+    } else {
+        for thread in process_info.threads.iter() {
+            println!("Thread [{}] {}", thread.thread_id, thread.thread_name);
+            for (idx, frame) in thread.frames.iter().enumerate() {
+                if let Some(line_info) = frame.line_info {
+                    println!(
+                        "{}: {} ({})\n\tat {}:{}",
+                        idx, frame.symbol_name, frame.symbol_offset, line_info.file, line_info.line
+                    );
+                } else {
+                    println!("{}: {} ({})", idx, frame.symbol_name, frame.symbol_offset);
+                }
+            }
+        }
+    }
 }
